@@ -7,6 +7,41 @@ from django.views import generic, View
 from django.http import Http404
 
 # Create your class based views here.
+# Note that we are sublassing CourseListView from base view class
+class CourseListView(View):
+    # Handle get request
+    def get(self, request):
+        context = {}
+        course_list = Course.objects.order_by('-total_enrollment')[:10]
+        context['course_list'] =  course_list
+        return render (request, 'onlinecourse/course_list.html', context)
+
+class EnrollView(View):
+    # Handle port request
+    def post(self, request, *args, **kwargs):
+        course_id = kwargs.get('pk')
+        course = get_object_or_404(Course, pk=course_id)
+        # Increase total enrollment by 1
+        course.total_enrollment += 1
+        course.save()
+        return HttpResponseRedirect(reverse(viewname='onlinecourse:course_details', args=(course_id,)))
+
+class CourseDetailsView(View):
+    # Handle get request
+    def get(self,request, *args, **kwargs):
+        context = {}
+        # We get URL paramter pk from keyword argument list as course_id
+        course_id = kwargs.get('pk')
+        try:
+            # Get the course object based on course_id
+            course = get_object_or_404(Course, pk=course_id)
+            # Append the course object to context
+            context['course'] = course
+            # User render method to return a HTTP response with template
+            return render(request, 'onlinecourse/course_detail.html', context)
+        except Course.DoesNotExist:
+            raise Http404("No course matches the given id.")
+
 
 
 
